@@ -1,0 +1,22 @@
+{
+  "scoreboard": {
+    "timestamp": null,
+    "data": {}
+  },
+  "player_stats": {
+    "timestamp": null,
+    "data": {}
+  },
+  "venue": {
+    "timestamp": null,
+    "data": {}
+  },
+  "bvp": {
+    "timestamp": null,
+    "data": {}
+  },
+  "hit_streak": {
+    "timestamp": null,
+    "data": {}
+  }
+}
