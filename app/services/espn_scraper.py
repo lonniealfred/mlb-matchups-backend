@@ -30,7 +30,13 @@ def get_event_ids() -> List[str]:
         href = item.get("$ref")
         if not href:
             continue
+
+        # Extract last part of URL
         event_id = href.rstrip("/").split("/")[-1]
+
+        # 🔥 FIX: remove ?lang=en&region=us
+        event_id = event_id.split("?")[0]
+
         event_ids.append(event_id)
 
     return event_ids
@@ -41,7 +47,10 @@ def get_event_ids() -> List[str]:
 # ---------------------------------------------------------
 
 def get_summary(event_id: str) -> Dict[str, Any]:
-    url = f"https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/events/{event_id}/competitions/{event_id}/details"
+    url = (
+        f"https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/"
+        f"events/{event_id}/competitions/{event_id}/details"
+    )
     return safe_get(url)
 
 
