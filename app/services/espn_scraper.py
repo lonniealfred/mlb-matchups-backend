@@ -81,7 +81,7 @@ def extract_hitters_from_box(box: Dict[str, Any], away_abbr: str, home_abbr: str
             name = ath.get("displayName")
             athlete_id = ath.get("id")
 
-            # Placeholder scoring logic (you will replace this later)
+            # Placeholder scoring logic (replace later)
             hitter_score = 10
             streak = 0
 
@@ -110,7 +110,7 @@ def extract_hitters_from_box(box: Dict[str, Any], away_abbr: str, home_abbr: str
 # 5. Main function used by /dashboard
 # ---------------------------------------------------------
 def get_mlb_games_with_hitters() -> List[Dict[str, Any]]:
-    print(">>> ESPN SCRAPER IS RUNNING <<<")  # Debug confirmation
+    print(">>> ESPN SCRAPER IS RUNNING <<<")
 
     scoreboard = get_scoreboard()
     games = extract_games(scoreboard)
