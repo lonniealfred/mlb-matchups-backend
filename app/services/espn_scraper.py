@@ -5,18 +5,12 @@ SCOREBOARD_URL = "https://site.web.api.espn.com/apis/v2/sports/baseball/mlb/scor
 BOX_URL_TEMPLATE = "https://site.web.api.espn.com/apis/v2/sports/baseball/mlb/summary?event={event_id}"
 
 
-# ---------------------------------------------------------
-# 1. Fetch ESPN scoreboard
-# ---------------------------------------------------------
 def get_scoreboard() -> Dict[str, Any]:
     resp = requests.get(SCOREBOARD_URL, timeout=10)
     resp.raise_for_status()
     return resp.json()
 
 
-# ---------------------------------------------------------
-# 2. Extract basic game info (teams, event IDs)
-# ---------------------------------------------------------
 def extract_games(scoreboard: Dict[str, Any]) -> List[Dict[str, Any]]:
     events = scoreboard.get("events", [])
     games = []
@@ -47,9 +41,6 @@ def extract_games(scoreboard: Dict[str, Any]) -> List[Dict[str, Any]]:
     return games
 
 
-# ---------------------------------------------------------
-# 3. Fetch ESPN boxscore for a specific game
-# ---------------------------------------------------------
 def get_boxscore(event_id: str) -> Dict[str, Any]:
     url = BOX_URL_TEMPLATE.format(event_id=event_id)
     resp = requests.get(url, timeout=10)
@@ -57,12 +48,14 @@ def get_boxscore(event_id: str) -> Dict[str, Any]:
     return resp.json()
 
 
-# ---------------------------------------------------------
-# 4. Extract hitters from boxscore
-# ---------------------------------------------------------
 def extract_hitters_from_box(box: Dict[str, Any], away_abbr: str, home_abbr: str) -> Dict[str, Any]:
-    boxscore = box.get("boxscore", {})
-    players_groups = boxscore.get("players", [])
+    boxscore = box.get("boxscore")
+    if not boxscore:
+        return {"has_boxscore": False, "away_top_hitters": [], "home_top_hitters": []}
+
+    players_groups = boxscore.get("players")
+    if not players_groups:
+        return {"has_boxscore": False, "away_top_hitters": [], "home_top_hitters": []}
 
     away_hitters = []
     home_hitters = []
@@ -76,20 +69,20 @@ def extract_hitters_from_box(box: Dict[str, Any], away_abbr: str, home_abbr: str
         if not batting:
             continue
 
-        for athlete in batting.get("athletes", []):
+        athletes = batting.get("athletes", [])
+        if not athletes:
+            continue
+
+        for athlete in athletes:
             ath = athlete.get("athlete", {})
             name = ath.get("displayName")
             athlete_id = ath.get("id")
 
-            # Placeholder scoring logic (replace later)
-            hitter_score = 10
-            streak = 0
-
             hitter = {
                 "id": athlete_id,
                 "name": name,
-                "hitter_score": hitter_score,
-                "streak": streak,
+                "hitter_score": 10,
+                "streak": 0,
             }
 
             if team_abbr == away_abbr:
@@ -97,18 +90,13 @@ def extract_hitters_from_box(box: Dict[str, Any], away_abbr: str, home_abbr: str
             elif team_abbr == home_abbr:
                 home_hitters.append(hitter)
 
-    away_top = sorted(away_hitters, key=lambda h: h["hitter_score"], reverse=True)[:9]
-    home_top = sorted(home_hitters, key=lambda h: h["hitter_score"], reverse=True)[:9]
-
     return {
-        "away_top_hitters": away_top,
-        "home_top_hitters": home_top,
+        "has_boxscore": True,
+        "away_top_hitters": away_hitters[:9],
+        "home_top_hitters": home_hitters[:9],
     }
 
 
-# ---------------------------------------------------------
-# 5. Main function used by /dashboard
-# ---------------------------------------------------------
 def get_mlb_games_with_hitters() -> List[Dict[str, Any]]:
     print(">>> ESPN SCRAPER IS RUNNING <<<")
 
@@ -117,8 +105,16 @@ def get_mlb_games_with_hitters() -> List[Dict[str, Any]]:
 
     enriched_games = []
     for g in games:
-        box = get_boxscore(g["event_id"])
-        hitters = extract_hitters_from_box(box, g["away_team"], g["home_team"])
+        try:
+            box = get_boxscore(g["event_id"])
+            hitters = extract_hitters_from_box(box, g["away_team"], g["home_team"])
+        except Exception as e:
+            print(f"Boxscore error for event {g['event_id']}: {e}")
+            hitters = {
+                "has_boxscore": False,
+                "away_top_hitters": [],
+                "home_top_hitters": []
+            }
 
         enriched_games.append({
             **g,
