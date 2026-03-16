@@ -1,15 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Import your mock dashboard data
-from app.services.mock_dashboard import MOCK_DASHBOARD
+# Restore your real scraper import
+from app.services.espn_scraper import build_dashboard
 
 app = FastAPI()
 
-# CORS middleware (required for frontend → backend communication)
+# Keep CORS — your frontend requires this
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # You can restrict this later
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,5 +21,5 @@ def root():
 
 @app.get("/dashboard")
 def dashboard():
-    # Return mock data for now
-    return MOCK_DASHBOARD
+    # Restore live data
+    return build_dashboard()
