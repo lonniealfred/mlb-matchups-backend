@@ -1,52 +1,82 @@
-# app/services/scoring.py
+# scoring.py
 
-def score_batter_vs_pitcher(hr: int, avg: float, pa: int) -> float:
-    score = 0
-    score += hr  # 1 point per HR
+def score_hitter(hitter, pitcher_name, stadium_hr_factor):
+    """
+    Computes the full hitter score including:
+    - BvP HR points (0–6)
+    - BvP AVG points (0–3)
+    - Hit streak points (0–12)
+    - Ballpark HR Factor points (0–4)
+    - Raw score (0–25)
+    - Final normalized score (0–100)
+    """
 
-    if pa >= 5:
-        score += avg * 10  # scaled AVG rule
+    # -----------------------------
+    # 1. BvP HR Points (0–6)
+    # -----------------------------
+    bvp_hr = hitter.get("bvp_hr", 0)
+    bvp_hr_points = min(bvp_hr * 2, 6)
 
-    return score
+    # -----------------------------
+    # 2. BvP AVG Points (0–3)
+    # -----------------------------
+    bvp_avg = hitter.get("bvp_avg", 0.0)
+    plate_appearances = hitter.get("bvp_pa", 0)
 
+    if plate_appearances >= 5:
+        if bvp_avg >= 0.300:
+            bvp_avg_points = 3
+        elif bvp_avg >= 0.250:
+            bvp_avg_points = 2
+        else:
+            bvp_avg_points = 1
+    else:
+        bvp_avg_points = 0
 
-def score_hit_streak(streak: int) -> int:
-    if streak >= 11:
-        return 20
-    elif streak >= 8:
-        return 15
-    elif streak >= 6:
-        return 10
-    elif streak >= 4:
-        return 5
-    return 0
+    # -----------------------------
+    # 3. Hit Streak Points (0–12)
+    # -----------------------------
+    streak = hitter.get("streak", 0)
+    streak_points = min(streak, 12)
 
+    # -----------------------------
+    # 4. Ballpark HR Factor Points (0–4)
+    # -----------------------------
+    if stadium_hr_factor >= 120:
+        ballpark_points = 4
+    elif stadium_hr_factor >= 105:
+        ballpark_points = 2
+    else:
+        ballpark_points = 0
 
-def score_stadium(hr_factor: float) -> float:
-    return (hr_factor - 100) / 2
+    # -----------------------------
+    # 5. Raw Score (max = 25)
+    # -----------------------------
+    raw_score = (
+        bvp_hr_points
+        + bvp_avg_points
+        + streak_points
+        + ballpark_points
+    )
 
+    # -----------------------------
+    # 6. Final Normalized Score (0–100)
+    # -----------------------------
+    hitter_score = round((raw_score / 25) * 100)
 
-def score_pitcher_vulnerability(era: float, recent_er: float, split_ops: float, era_vs_team=None) -> float:
-    score = 0
-
-    # Season ERA
-    if era >= 6: score += 10
-    elif era >= 5: score += 8
-    elif era >= 4: score += 5
-    elif era >= 3.5: score += 3
-
-    # Recent form
-    if recent_er >= 5: score += 6
-    elif recent_er >= 4: score += 4
-    elif recent_er >= 3: score += 2
-
-    # Splits
-    if split_ops >= .800: score += 4
-    elif split_ops >= .750: score += 2
-
-    # Team history
-    if era_vs_team is not None:
-        if era_vs_team >= 5: score += 3
-        elif era_vs_team >= 4: score += 1
-
-    return min(score, 20)
+    # -----------------------------
+    # 7. Return full breakdown
+    # -----------------------------
+    return {
+        "name": hitter.get("name"),
+        "bvp_hr": bvp_hr,
+        "bvp_hr_points": bvp_hr_points,
+        "bvp_avg": bvp_avg,
+        "bvp_avg_points": bvp_avg_points,
+        "streak": streak,
+        "streak_points": streak_points,
+        "ballpark_hr_factor": stadium_hr_factor,
+        "ballpark_points": ballpark_points,
+        "raw_score": raw_score,
+        "hitter_score": hitter_score,
+    }
