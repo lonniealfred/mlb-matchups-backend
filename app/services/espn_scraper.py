@@ -1,21 +1,80 @@
 import requests
 from datetime import datetime, timedelta
 
+# ESPN endpoints
 SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard"
 BOXSCORE_URL = "https://site.web.api.espn.com/apis/v2/sports/baseball/mlb/summary"
 
+# -----------------------------
+# DEMO FALLBACK VALUES
+# -----------------------------
+
+DEMO_PITCHERS = {
+    "home_pitcher": {
+        "name": "Demo Home Pitcher",
+        "era": 3.25,
+        "whip": 1.12,
+        "hand": "R"
+    },
+    "away_pitcher": {
+        "name": "Demo Away Pitcher",
+        "era": 3.75,
+        "whip": 1.20,
+        "hand": "L"
+    }
+}
+
+DEMO_HITTERS = [
+    {"name": "Demo Hitter 1", "team": "HOME", "avg": .300, "hr": 5, "rbi": 12},
+    {"name": "Demo Hitter 2", "team": "AWAY", "avg": .280, "hr": 4, "rbi": 10},
+]
+
+DEMO_GAME = {
+    "game_id": "demo-1",
+    "start_time": "2026-04-12T13:05:00Z",
+    "home_team": "NYY",
+    "away_team": "BOS",
+    "pitchers": DEMO_PITCHERS,
+    "hitters": DEMO_HITTERS
+}
+
+# -----------------------------
+# SAFE ESPN FETCHERS
+# -----------------------------
+
 def fetch_scoreboard():
-    res = requests.get(SCOREBOARD_URL)
-    res.raise_for_status()
-    return res.json()
+    try:
+        res = requests.get(SCOREBOARD_URL, timeout=10)
+        res.raise_for_status()
+        return res.json()
+    except:
+        # If ESPN scoreboard fails, return a single demo game
+        return {"events": [DEMO_GAME]}
+
 
 def fetch_boxscore(game_id):
     url = f"{BOXSCORE_URL}?event={game_id}"
-    res = requests.get(url)
-    res.raise_for_status()
-    return res.json()
+    res = requests.get(url, timeout=10)
+
+    # ESPN returns 404 for many offseason or archived games
+    if res.status_code == 404:
+        return None
+
+    try:
+        res.raise_for_status()
+        return res.json()
+    except:
+        return None
+
+
+# -----------------------------
+# DATA EXTRACTORS
+# -----------------------------
 
 def extract_pitchers(box):
+    if box is None:
+        return DEMO_PITCHERS
+
     try:
         home_pitcher = box["boxscore"]["players"][0]["statistics"][0]["athletes"][0]
         away_pitcher = box["boxscore"]["players"][1]["statistics"][0]["athletes"][0]
@@ -35,12 +94,13 @@ def extract_pitchers(box):
             }
         }
     except:
-        return {
-            "home_pitcher": None,
-            "away_pitcher": None
-        }
+        return DEMO_PITCHERS
+
 
 def extract_hitters(box):
+    if box is None:
+        return DEMO_HITTERS
+
     hitters = []
 
     try:
@@ -58,22 +118,36 @@ def extract_hitters(box):
                             "rbi": int(athlete.get("rbi", 0)),
                         })
     except:
-        pass
+        return DEMO_HITTERS
 
-    return hitters
+    return hitters if hitters else DEMO_HITTERS
+
+
+# -----------------------------
+# MAIN DASHBOARD BUILDER
+# -----------------------------
 
 def build_dashboard():
     data = fetch_scoreboard()
 
     games = []
+
     for event in data.get("events", []):
-        game_id = event["id"]
-        home = event["competitions"][0]["competitors"][0]["team"]["abbreviation"]
-        away = event["competitions"][0]["competitors"][1]["team"]["abbreviation"]
-        start_time = event["date"]
+        # If ESPN returned a demo game directly
+        if "pitchers" in event:
+            games.append(event)
+            continue
+
+        try:
+            game_id = event["id"]
+            home = event["competitions"][0]["competitors"][0]["team"]["abbreviation"]
+            away = event["competitions"][0]["competitors"][1]["team"]["abbreviation"]
+            start_time = event["date"]
+        except:
+            games.append(DEMO_GAME)
+            continue
 
         box = fetch_boxscore(game_id)
-
         pitchers = extract_pitchers(box)
         hitters = extract_hitters(box)
 
@@ -85,5 +159,9 @@ def build_dashboard():
             "pitchers": pitchers,
             "hitters": hitters
         })
+
+    # If ESPN returned nothing at all
+    if not games:
+        games = [DEMO_GAME]
 
     return {"games": games}

@@ -1,38 +1,63 @@
-def score_hitter(hitter, pitcher):
-    if pitcher is None:
+# -----------------------------
+# PITCHER SCORING
+# -----------------------------
+
+def score_pitcher(p):
+    if p is None:
         return {
-            **hitter,
-            "bvp_hr": 0,
-            "bvp_avg": 0,
-            "streak": 0,
-            "ballpark_hr_factor": 100,
-            "raw_score": 0,
-            "hitter_score": 0
+            "name": "Demo Pitcher",
+            "era": 3.50,
+            "whip": 1.15,
+            "hand": "R",
+            "pitcher_score": 75
         }
 
-    # Placeholder BVP logic (real version uses ESPN BVP data)
-    bvp_hr = 0
-    bvp_avg = hitter.get("avg", 0)
+    era = float(p.get("era", 4.00))
+    whip = float(p.get("whip", 1.30))
 
-    # Simple streak placeholder
-    streak = hitter.get("hr", 0)
-
-    # Ballpark factor placeholder
-    ballpark_factor = 100
-
-    raw = (
-        (bvp_hr * 2) +
-        (bvp_avg * 10) +
-        (streak * 1) +
-        (ballpark_factor / 25)
-    )
+    # Simple normalized scoring
+    score = max(0, 100 - (era * 10 + whip * 15))
 
     return {
-        **hitter,
-        "bvp_hr": bvp_hr,
-        "bvp_avg": bvp_avg,
-        "streak": streak,
-        "ballpark_hr_factor": ballpark_factor,
-        "raw_score": raw,
-        "hitter_score": int(raw * 4)
+        **p,
+        "pitcher_score": int(score)
+    }
+
+
+# -----------------------------
+# HITTER SCORING
+# -----------------------------
+
+def score_hitter(h, pitcher):
+    if h is None:
+        return {
+            "name": "Demo Hitter",
+            "avg": .280,
+            "hr": 4,
+            "rbi": 10,
+            "hitter_score": 80
+        }
+
+    avg = float(h.get("avg", 0))
+    hr = int(h.get("hr", 0))
+    rbi = int(h.get("rbi", 0))
+
+    # Pitcher influence
+    pitcher_penalty = 0
+    if pitcher:
+        pitcher_penalty = float(pitcher.get("era", 4.00)) * 2
+
+    # Simple scoring model
+    raw = (
+        avg * 100 +
+        hr * 5 +
+        rbi * 1 -
+        pitcher_penalty
+    )
+
+    score = max(0, min(100, raw))
+
+    return {
+        **h,
+        "hitter_score": int(score)
     }
