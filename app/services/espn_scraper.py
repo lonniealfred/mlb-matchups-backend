@@ -1,159 +1,89 @@
 import requests
-from typing import Dict, Any, List
+from datetime import datetime, timedelta
 
-SCOREBOARD_URL = "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/events"
+SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard"
+BOXSCORE_URL = "https://site.web.api.espn.com/apis/v2/sports/baseball/mlb/summary"
 
+def fetch_scoreboard():
+    res = requests.get(SCOREBOARD_URL)
+    res.raise_for_status()
+    return res.json()
 
-def safe_get(url: str) -> Dict[str, Any]:
-    """Fetch JSON safely without crashing."""
+def fetch_boxscore(game_id):
+    url = f"{BOXSCORE_URL}?event={game_id}"
+    res = requests.get(url)
+    res.raise_for_status()
+    return res.json()
+
+def extract_pitchers(box):
     try:
-        r = requests.get(url, timeout=10)
-        if r.status_code != 200:
-            print(f"Fetch failed {r.status_code}: {url}")
-            return {}
-        return r.json()
-    except Exception as e:
-        print(f"Request error for {url}: {e}")
-        return {}
+        home_pitcher = box["boxscore"]["players"][0]["statistics"][0]["athletes"][0]
+        away_pitcher = box["boxscore"]["players"][1]["statistics"][0]["athletes"][0]
 
-
-# ---------------------------------------------------------
-# 1. Fetch event IDs
-# ---------------------------------------------------------
-
-def get_event_ids() -> List[str]:
-    data = safe_get(SCOREBOARD_URL)
-    items = data.get("items", [])
-    event_ids = []
-
-    for item in items:
-        href = item.get("$ref")
-        if not href:
-            continue
-
-        # Extract last part of URL
-        event_id = href.rstrip("/").split("/")[-1]
-
-        # 🔥 FIX: remove ?lang=en&region=us
-        event_id = event_id.split("?")[0]
-
-        event_ids.append(event_id)
-
-    return event_ids
-
-
-# ---------------------------------------------------------
-# 2. Fetch competition summary
-# ---------------------------------------------------------
-
-def get_summary(event_id: str) -> Dict[str, Any]:
-    url = (
-        f"https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/"
-        f"events/{event_id}/competitions/{event_id}/details"
-    )
-    return safe_get(url)
-
-
-# ---------------------------------------------------------
-# 3. Resolve team abbreviation from ESPN team URL
-# ---------------------------------------------------------
-
-def resolve_team_abbr(team_ref: str) -> str:
-    team_data = safe_get(team_ref)
-    return team_data.get("abbreviation", "UNK")
-
-
-# ---------------------------------------------------------
-# 4. Extract hitters safely
-# ---------------------------------------------------------
-
-def extract_hitters(summary: Dict[str, Any], away_abbr: str, home_abbr: str) -> Dict[str, Any]:
-    stats = summary.get("statistics", [])
-    batting = next((s for s in stats if s.get("name") == "batting"), None)
-
-    if not batting:
         return {
-            "has_boxscore": False,
-            "away_top_hitters": [],
-            "home_top_hitters": []
+            "home_pitcher": {
+                "name": home_pitcher["athlete"]["displayName"],
+                "era": float(home_pitcher.get("era", 0)),
+                "whip": float(home_pitcher.get("whip", 0)),
+                "hand": home_pitcher["athlete"].get("hand", "R")
+            },
+            "away_pitcher": {
+                "name": away_pitcher["athlete"]["displayName"],
+                "era": float(away_pitcher.get("era", 0)),
+                "whip": float(away_pitcher.get("whip", 0)),
+                "hand": away_pitcher["athlete"].get("hand", "R")
+            }
         }
-
-    athletes = batting.get("athletes", [])
-    if not athletes:
+    except:
         return {
-            "has_boxscore": False,
-            "away_top_hitters": [],
-            "home_top_hitters": []
+            "home_pitcher": None,
+            "away_pitcher": None
         }
 
-    away_hitters = []
-    home_hitters = []
+def extract_hitters(box):
+    hitters = []
 
-    for entry in athletes:
-        athlete = entry.get("athlete", {})
-        team = entry.get("team", {})
-        team_abbr = team.get("abbreviation")
+    try:
+        for team in box["boxscore"]["players"]:
+            team_abbrev = team["team"]["abbreviation"]
 
-        hitter = {
-            "id": athlete.get("id"),
-            "name": athlete.get("displayName"),
-            "hitter_score": 10,
-            "streak": 0,
-        }
+            for group in team["statistics"]:
+                if group["name"] == "batting":
+                    for athlete in group["athletes"]:
+                        hitters.append({
+                            "name": athlete["athlete"]["displayName"],
+                            "team": team_abbrev,
+                            "avg": float(athlete.get("avg", 0)),
+                            "hr": int(athlete.get("hr", 0)),
+                            "rbi": int(athlete.get("rbi", 0)),
+                        })
+    except:
+        pass
 
-        if team_abbr == away_abbr:
-            away_hitters.append(hitter)
-        elif team_abbr == home_abbr:
-            home_hitters.append(hitter)
+    return hitters
 
-    return {
-        "has_boxscore": True,
-        "away_top_hitters": away_hitters[:9],
-        "home_top_hitters": home_hitters[:9]
-    }
+def build_dashboard():
+    data = fetch_scoreboard()
 
-
-# ---------------------------------------------------------
-# 5. Main function used by /dashboard
-# ---------------------------------------------------------
-
-def get_mlb_games_with_hitters() -> List[Dict[str, Any]]:
-    print(">>> ESPN SCRAPER IS RUNNING <<<")
-
-    event_ids = get_event_ids()
     games = []
+    for event in data.get("events", []):
+        game_id = event["id"]
+        home = event["competitions"][0]["competitors"][0]["team"]["abbreviation"]
+        away = event["competitions"][0]["competitors"][1]["team"]["abbreviation"]
+        start_time = event["date"]
 
-    for event_id in event_ids:
-        summary = get_summary(event_id)
-        if not summary:
-            continue
+        box = fetch_boxscore(game_id)
 
-        competitions = summary.get("competitions", [])
-        if not competitions:
-            continue
-
-        comp = competitions[0]
-        competitors = comp.get("competitors", [])
-        if len(competitors) < 2:
-            continue
-
-        away = next((c for c in competitors if c.get("homeAway") == "away"), None)
-        home = next((c for c in competitors if c.get("homeAway") == "home"), None)
-
-        if not away or not home:
-            continue
-
-        # Resolve team abbreviations from ESPN team URLs
-        away_abbr = resolve_team_abbr(away["team"]["$ref"])
-        home_abbr = resolve_team_abbr(home["team"]["$ref"])
-
-        hitters = extract_hitters(summary, away_abbr, home_abbr)
+        pitchers = extract_pitchers(box)
+        hitters = extract_hitters(box)
 
         games.append({
-            "game_id": event_id,
-            "away_team": away_abbr,
-            "home_team": home_abbr,
+            "game_id": game_id,
+            "start_time": start_time,
+            "home_team": home,
+            "away_team": away,
+            "pitchers": pitchers,
             "hitters": hitters
         })
 
-    return games
+    return {"games": games}
