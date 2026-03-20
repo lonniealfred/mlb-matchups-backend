@@ -1,93 +1,82 @@
-from app.services.scoring import score_hitter, score_pitcher
+# app/services/matchups.py
 
-# Demo fallback values (used when ESPN data is missing)
-DEMO_MATCHUP = {
-    "game_id": "demo-1",
-    "start_time": "2026-04-12T13:05:00Z",
-    "home_team": "NYY",
-    "away_team": "BOS",
-    "pitchers": {
-        "home_pitcher": {
-            "name": "Demo Home Pitcher",
-            "era": 3.25,
-            "whip": 1.12,
-            "hand": "R"
-        },
-        "away_pitcher": {
-            "name": "Demo Away Pitcher",
-            "era": 3.75,
-            "whip": 1.20,
-            "hand": "L"
-        }
-    },
-    "top_hitters": {
-        "home_top_hitters": [],
-        "away_top_hitters": []
+from typing import Dict, List, Any
+
+def safe_get(obj: Dict, path: List[str], default=None):
+    """Safely walk nested dicts."""
+    for key in path:
+        if not isinstance(obj, dict) or key not in obj:
+            return default
+        obj = obj[key]
+    return obj
+
+
+def extract_pitcher(team: Dict) -> Dict:
+    """Extract pitcher info with safe defaults."""
+    return {
+        "name": safe_get(team, ["probables", 0, "athlete", "displayName"], "TBD"),
+        "team": safe_get(team, ["team", "abbreviation"], "UNK"),
+        "era": safe_get(team, ["probables", 0, "statistics", 0, "era"], 0.00),
+        "whip": safe_get(team, ["probables", 0, "statistics", 0, "whip"], 0.00),
+        "photo_url": safe_get(team, ["probables", 0, "athlete", "headshot"], None),
     }
-}
 
 
-def build_matchups(games):
+def extract_hitter(athlete: Dict, opponent_pitcher: str) -> Dict:
+    """Extract hitter info with safe defaults."""
+    return {
+        "name": athlete.get("displayName", "Unknown Player"),
+        "team": athlete.get("team", {}).get("abbreviation", "UNK"),
+        "avg": athlete.get("statistics", {}).get("avg", 0.0),
+        "hr": athlete.get("statistics", {}).get("hr", 0),
+        "rbi": athlete.get("statistics", {}).get("rbi", 0),
+        "streak": athlete.get("statistics", {}).get("streak", 0),
+        "opponent_pitcher": opponent_pitcher,
+        "photo_url": athlete.get("headshot"),
+        "score": {},  # filled in later by scoring.py
+    }
+
+
+def extract_matchups(scoreboard: Dict) -> List[Dict]:
+    """Extract matchups from ESPN scoreboard JSON."""
+    events = scoreboard.get("events", [])
     matchups = []
 
-    for g in games:
-        try:
-            home = g["home_team"]
-            away = g["away_team"]
-            pitchers = g.get("pitchers", {})
-            hitters = g.get("hitters", [])
-        except:
-            matchups.append(DEMO_MATCHUP)
+    for game in events:
+        competitions = game.get("competitions", [])
+        if not competitions:
             continue
 
-        # Extract pitchers safely
-        home_pitcher = pitchers.get("home_pitcher")
-        away_pitcher = pitchers.get("away_pitcher")
+        comp = competitions[0]
+        competitors = comp.get("competitors", [])
 
-        # Fallback if missing
-        if home_pitcher is None or away_pitcher is None:
-            home_pitcher = DEMO_MATCHUP["pitchers"]["home_pitcher"]
-            away_pitcher = DEMO_MATCHUP["pitchers"]["away_pitcher"]
+        if len(competitors) != 2:
+            continue
 
-        # Score pitchers
-        scored_home_pitcher = score_pitcher(home_pitcher)
-        scored_away_pitcher = score_pitcher(away_pitcher)
+        home = competitors[0] if competitors[0].get("homeAway") == "home" else competitors[1]
+        away = competitors[1] if home is competitors[0] else competitors[0]
 
-        # Split hitters by team
-        home_hitters = [h for h in hitters if h.get("team") == home]
-        away_hitters = [h for h in hitters if h.get("team") == away]
+        home_pitcher = extract_pitcher(home)
+        away_pitcher = extract_pitcher(away)
 
-        # Fallback hitters if empty
-        if not home_hitters:
-            home_hitters = [
-                {"name": "Demo Hitter 1", "team": home, "avg": .300, "hr": 5, "rbi": 12}
-            ]
-        if not away_hitters:
-            away_hitters = [
-                {"name": "Demo Hitter 2", "team": away, "avg": .280, "hr": 4, "rbi": 10}
-            ]
+        # Extract top hitters (if ESPN provides them)
+        raw_hitters = comp.get("notes", [])  # ESPN sometimes puts hitters here
+        top_hitters = []
 
-        # Score hitters
-        scored_home_hitters = [score_hitter(h, away_pitcher) for h in home_hitters]
-        scored_away_hitters = [score_hitter(h, home_pitcher) for h in away_hitters]
-
-        # Sort and take top 5
-        top_home = sorted(scored_home_hitters, key=lambda x: x["hitter_score"], reverse=True)[:5]
-        top_away = sorted(scored_away_hitters, key=lambda x: x["hitter_score"], reverse=True)[:5]
+        for h in raw_hitters:
+            athlete = h.get("athlete")
+            if not athlete:
+                continue
+            top_hitters.append(
+                extract_hitter(athlete, opponent_pitcher=away_pitcher["name"])
+            )
 
         matchups.append({
-            "game_id": g.get("game_id", "demo"),
-            "start_time": g.get("start_time", DEMO_MATCHUP["start_time"]),
-            "home_team": home,
-            "away_team": away,
-            "pitchers": {
-                "home_pitcher": scored_home_pitcher,
-                "away_pitcher": scored_away_pitcher
-            },
-            "top_hitters": {
-                "home_top_hitters": top_home,
-                "away_top_hitters": top_away
-            }
+            "home_team": home.get("team", {}).get("abbreviation", "UNK"),
+            "away_team": away.get("team", {}).get("abbreviation", "UNK"),
+            "home_pitcher": home_pitcher,
+            "away_pitcher": away_pitcher,
+            "top_hitters": top_hitters,
         })
 
     return matchups

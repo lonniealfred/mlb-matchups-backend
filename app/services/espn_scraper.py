@@ -1,167 +1,61 @@
-import requests
-from datetime import datetime, timedelta
+# app/services/espn_scraper.py
 
-# ESPN endpoints
-SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard"
-BOXSCORE_URL = "https://site.web.api.espn.com/apis/v2/sports/baseball/mlb/summary"
+import httpx
+from app.config import settings
+from app.services.demo_fallback import get_demo_dashboard
+from app.services.matchups import extract_matchups
+from app.services.scoring import score_hitters
 
-# -----------------------------
-# DEMO FALLBACK VALUES
-# -----------------------------
+ESPN_SCOREBOARD_URL = (
+    "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard"
+)
 
-DEMO_PITCHERS = {
-    "home_pitcher": {
-        "name": "Demo Home Pitcher",
-        "era": 3.25,
-        "whip": 1.12,
-        "hand": "R"
-    },
-    "away_pitcher": {
-        "name": "Demo Away Pitcher",
-        "era": 3.75,
-        "whip": 1.20,
-        "hand": "L"
-    }
-}
-
-DEMO_HITTERS = [
-    {"name": "Demo Hitter 1", "team": "HOME", "avg": .300, "hr": 5, "rbi": 12},
-    {"name": "Demo Hitter 2", "team": "AWAY", "avg": .280, "hr": 4, "rbi": 10},
-]
-
-DEMO_GAME = {
-    "game_id": "demo-1",
-    "start_time": "2026-04-12T13:05:00Z",
-    "home_team": "NYY",
-    "away_team": "BOS",
-    "pitchers": DEMO_PITCHERS,
-    "hitters": DEMO_HITTERS
-}
-
-# -----------------------------
-# SAFE ESPN FETCHERS
-# -----------------------------
-
-def fetch_scoreboard():
+async def fetch_json(url: str):
+    """Safe JSON fetch with graceful fallback."""
     try:
-        res = requests.get(SCOREBOARD_URL, timeout=10)
-        res.raise_for_status()
-        return res.json()
-    except:
-        # If ESPN scoreboard fails, return a single demo game
-        return {"events": [DEMO_GAME]}
-
-
-def fetch_boxscore(game_id):
-    url = f"{BOXSCORE_URL}?event={game_id}"
-    res = requests.get(url, timeout=10)
-
-    # ESPN returns 404 for many offseason or archived games
-    if res.status_code == 404:
-        return None
-
-    try:
-        res.raise_for_status()
-        return res.json()
-    except:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(url)
+            r.raise_for_status()
+            return r.json()
+    except Exception:
         return None
 
 
-# -----------------------------
-# DATA EXTRACTORS
-# -----------------------------
+async def build_dashboard():
+    """
+    Main entrypoint for the backend.
+    Returns a dict containing:
+      - matchups
+      - hitters
+      - pitchers
+    Always returns valid data (fallback if needed).
+    """
 
-def extract_pitchers(box):
-    if box is None:
-        return DEMO_PITCHERS
+    # DEMO MODE (forced)
+    if settings.SCRAPER_MODE.lower() == "demo":
+        return get_demo_dashboard()
 
-    try:
-        home_pitcher = box["boxscore"]["players"][0]["statistics"][0]["athletes"][0]
-        away_pitcher = box["boxscore"]["players"][1]["statistics"][0]["athletes"][0]
+    # LIVE MODE
+    data = await fetch_json(ESPN_SCOREBOARD_URL)
 
-        return {
-            "home_pitcher": {
-                "name": home_pitcher["athlete"]["displayName"],
-                "era": float(home_pitcher.get("era", 0)),
-                "whip": float(home_pitcher.get("whip", 0)),
-                "hand": home_pitcher["athlete"].get("hand", "R")
-            },
-            "away_pitcher": {
-                "name": away_pitcher["athlete"]["displayName"],
-                "era": float(away_pitcher.get("era", 0)),
-                "whip": float(away_pitcher.get("whip", 0)),
-                "hand": away_pitcher["athlete"].get("hand", "R")
-            }
-        }
-    except:
-        return DEMO_PITCHERS
+    # If ESPN fails → fallback
+    if not data:
+        return get_demo_dashboard()
 
+    # Extract matchups
+    matchups = extract_matchups(data)
 
-def extract_hitters(box):
-    if box is None:
-        return DEMO_HITTERS
-
+    # Extract hitters from matchups
     hitters = []
+    for m in matchups:
+        hitters.extend(m.get("top_hitters", []))
 
-    try:
-        for team in box["boxscore"]["players"]:
-            team_abbrev = team["team"]["abbreviation"]
+    # Score hitters
+    scored_hitters = score_hitters(hitters)
 
-            for group in team["statistics"]:
-                if group["name"] == "batting":
-                    for athlete in group["athletes"]:
-                        hitters.append({
-                            "name": athlete["athlete"]["displayName"],
-                            "team": team_abbrev,
-                            "avg": float(athlete.get("avg", 0)),
-                            "hr": int(athlete.get("hr", 0)),
-                            "rbi": int(athlete.get("rbi", 0)),
-                        })
-    except:
-        return DEMO_HITTERS
-
-    return hitters if hitters else DEMO_HITTERS
-
-
-# -----------------------------
-# MAIN DASHBOARD BUILDER
-# -----------------------------
-
-def build_dashboard():
-    data = fetch_scoreboard()
-
-    games = []
-
-    for event in data.get("events", []):
-        # If ESPN returned a demo game directly
-        if "pitchers" in event:
-            games.append(event)
-            continue
-
-        try:
-            game_id = event["id"]
-            home = event["competitions"][0]["competitors"][0]["team"]["abbreviation"]
-            away = event["competitions"][0]["competitors"][1]["team"]["abbreviation"]
-            start_time = event["date"]
-        except:
-            games.append(DEMO_GAME)
-            continue
-
-        box = fetch_boxscore(game_id)
-        pitchers = extract_pitchers(box)
-        hitters = extract_hitters(box)
-
-        games.append({
-            "game_id": game_id,
-            "start_time": start_time,
-            "home_team": home,
-            "away_team": away,
-            "pitchers": pitchers,
-            "hitters": hitters
-        })
-
-    # If ESPN returned nothing at all
-    if not games:
-        games = [DEMO_GAME]
-
-    return {"games": games}
+    return {
+        "matchups": matchups,
+        "hitters": scored_hitters,
+        "pitchers": [m["home_pitcher"] for m in matchups]
+                    + [m["away_pitcher"] for m in matchups],
+    }

@@ -1,63 +1,46 @@
-# -----------------------------
-# PITCHER SCORING
-# -----------------------------
+# app/services/scoring.py
 
-def score_pitcher(p):
-    if p is None:
-        return {
-            "name": "Demo Pitcher",
-            "era": 3.50,
-            "whip": 1.15,
-            "hand": "R",
-            "pitcher_score": 75
-        }
+from typing import List, Dict
 
-    era = float(p.get("era", 4.00))
-    whip = float(p.get("whip", 1.30))
+def compute_bvp_points(hitter: Dict) -> float:
+    """Basic placeholder BvP scoring."""
+    avg = hitter.get("avg", 0.0)
+    hr = hitter.get("hr", 0)
+    return (avg * 10) + (hr * 2)
 
-    # Simple normalized scoring
-    score = max(0, 100 - (era * 10 + whip * 15))
 
-    return {
-        **p,
-        "pitcher_score": int(score)
+def compute_streak_points(hitter: Dict) -> float:
+    """Reward hot hitters."""
+    streak = hitter.get("streak", 0)
+    return min(streak * 1.5, 10)  # cap streak bonus
+
+
+def compute_ballpark_factor(hitter: Dict) -> float:
+    """Placeholder ballpark factor (can be replaced with real data)."""
+    return 1.0  # neutral for now
+
+
+def score_hitter(hitter: Dict) -> Dict:
+    """Compute full hitter score."""
+    bvp = compute_bvp_points(hitter)
+    streak = compute_streak_points(hitter)
+    park = compute_ballpark_factor(hitter)
+
+    raw = bvp + streak
+    final = raw * park
+
+    hitter["score"] = {
+        "bvp_hr_points": bvp,
+        "bvp_avg_points": bvp,
+        "hit_streak_points": streak,
+        "ballpark_hr_factor": park,
+        "raw_score": raw,
+        "final_score": round(final, 1),
     }
 
+    return hitter
 
-# -----------------------------
-# HITTER SCORING
-# -----------------------------
 
-def score_hitter(h, pitcher):
-    if h is None:
-        return {
-            "name": "Demo Hitter",
-            "avg": .280,
-            "hr": 4,
-            "rbi": 10,
-            "hitter_score": 80
-        }
-
-    avg = float(h.get("avg", 0))
-    hr = int(h.get("hr", 0))
-    rbi = int(h.get("rbi", 0))
-
-    # Pitcher influence
-    pitcher_penalty = 0
-    if pitcher:
-        pitcher_penalty = float(pitcher.get("era", 4.00)) * 2
-
-    # Simple scoring model
-    raw = (
-        avg * 100 +
-        hr * 5 +
-        rbi * 1 -
-        pitcher_penalty
-    )
-
-    score = max(0, min(100, raw))
-
-    return {
-        **h,
-        "hitter_score": int(score)
-    }
+def score_hitters(hitters: List[Dict]) -> List[Dict]:
+    """Score all hitters safely."""
+    return [score_hitter(h) for h in hitters]
