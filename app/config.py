@@ -1,16 +1,22 @@
-# app/config.py
+from pydantic_settings import BaseSettings
+from pydantic import Field
 
-from pydantic import BaseSettings
 
 class Settings(BaseSettings):
-    ENV: str = "development"
-    SCRAPER_MODE: str = "live"  # "live" or "demo"
-    CACHE_ENABLED: bool = True
-    CACHE_TTL: int = 3600  # seconds
-    LOG_LEVEL: str = "info"
+    # Environment
+    ENV: str = Field(default="production")
+    DEBUG: bool = Field(default=False)
+
+    # Scraper settings
+    SCRAPER_MODE: str = Field(default="live")  # "live" or "demo"
+    CACHE_ENABLED: bool = Field(default=True)
+
+    # Optional API keys
+    RAPIDAPI_KEY: str | None = None
 
     class Config:
         env_file = ".env"
-        env_file_encoding = "utf-8"
+        extra = "ignore"
+
 
 settings = Settings()
