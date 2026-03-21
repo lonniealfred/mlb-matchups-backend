@@ -1,28 +1,61 @@
-DEMO_PITCHERS = {
-    "home_pitcher": {
-        "name": "Demo Home Pitcher",
-        "era": 3.25,
-        "whip": 1.12,
-        "hand": "R"
-    },
-    "away_pitcher": {
-        "name": "Demo Away Pitcher",
-        "era": 3.75,
-        "whip": 1.20,
-        "hand": "L"
+# app/services/demo_fallback.py
+
+"""
+Provides a stable, always-available fallback dashboard response
+when live ESPN scraping fails or is disabled.
+"""
+
+from datetime import datetime
+
+
+def get_demo_dashboard():
+    """
+    Returns a complete, frontend-safe demo dashboard object.
+    This ensures the UI always renders even when live data is unavailable.
+    """
+
+    return {
+        "status": "demo",
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "games": [
+            {
+                "home_team": "New York Yankees",
+                "away_team": "Boston Red Sox",
+                "home_logo": "https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png",
+                "away_logo": "https://a.espncdn.com/i/teamlogos/mlb/500/bos.png",
+                "start_time": "2024-04-01T23:05:00Z",
+                "venue": "Yankee Stadium",
+                "weather": {
+                    "temp_f": 62,
+                    "condition": "Clear",
+                    "wind_mph": 5,
+                },
+                "analytics": {
+                    "run_expectancy": 9.1,
+                    "park_factor": 1.12,
+                    "weather_factor": 1.05,
+                    "momentum_rating": 0.7,
+                },
+            },
+            {
+                "home_team": "Los Angeles Dodgers",
+                "away_team": "San Diego Padres",
+                "home_logo": "https://a.espncdn.com/i/teamlogos/mlb/500/lad.png",
+                "away_logo": "https://a.espncdn.com/i/teamlogos/mlb/500/sd.png",
+                "start_time": "2024-04-01T02:10:00Z",
+                "venue": "Dodger Stadium",
+                "weather": {
+                    "temp_f": 72,
+                    "condition": "Partly Cloudy",
+                    "wind_mph": 3,
+                },
+                "analytics": {
+                    "run_expectancy": 8.4,
+                    "park_factor": 1.08,
+                    "weather_factor": 1.02,
+                    "momentum_rating": 0.6,
+                },
+            }
+        ],
+        "message": "Demo fallback data loaded successfully."
     }
-}
-
-DEMO_HITTERS = [
-    {"name": "Demo Hitter 1", "team": "HOME", "avg": .300, "hr": 5, "rbi": 12},
-    {"name": "Demo Hitter 2", "team": "AWAY", "avg": .280, "hr": 4, "rbi": 10},
-]
-
-DEMO_GAME = {
-    "game_id": "demo-1",
-    "start_time": "2026-04-12T13:05:00Z",
-    "home_team": "NYY",
-    "away_team": "BOS",
-    "pitchers": DEMO_PITCHERS,
-    "hitters": DEMO_HITTERS
-}
