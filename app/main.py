@@ -3,39 +3,30 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import settings
-from app.routers import dashboard
-
-app = FastAPI(
-    title="MLB Matchups Backend",
-    version="1.0.0",
-)
-
-# CORS (allow your frontend + local dev)
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    # Add your Vercel URL here, e.g.:
-    # "https://mlb-matchups-frontend.vercel.app",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# IMPORTANT: this must match your folder structure
+from app.routers.dashboard import router as dashboard_router
 
 
-@app.get("/health", tags=["system"])
-async def health_check():
-    return {
-        "status": "ok",
-        "env": settings.ENV,
-        "scraper_mode": settings.SCRAPER_MODE,
-    }
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="MLB Matchups API",
+        version="1.0.0",
+        description="Backend powering the MLB Matchups dashboard."
+    )
+
+    # CORS for your Next.js frontend
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # replace with your frontend domain later
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Register the dashboard router
+    app.include_router(dashboard_router)
+
+    return app
 
 
-# Routers
-app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
+app = create_app()
