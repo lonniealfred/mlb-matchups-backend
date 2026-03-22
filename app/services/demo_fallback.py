@@ -1,23 +1,10 @@
 # app/services/demo_fallback.py
 
-"""
-Provides a stable, always-available fallback dashboard response
-when live ESPN scraping fails or is disabled.
-"""
+from typing import Dict, Any
 
-from datetime import datetime
-
-
-def get_demo_dashboard():
-    """
-    Returns a complete, frontend-safe demo dashboard object.
-    This ensures the UI always renders even when live data is unavailable.
-    """
-
+def get_demo_dashboard() -> Dict[str, Any]:
     return {
-        "status": "demo",
-        "generated_at": datetime.utcnow().isoformat() + "Z",
-        "games": [
+        "matchups": [
             {
                 "home_team": "New York Yankees",
                 "away_team": "Boston Red Sox",
@@ -28,14 +15,14 @@ def get_demo_dashboard():
                 "weather": {
                     "temp_f": 62,
                     "condition": "Clear",
-                    "wind_mph": 5,
+                    "wind_mph": 5
                 },
                 "analytics": {
                     "run_expectancy": 9.1,
                     "park_factor": 1.12,
                     "weather_factor": 1.05,
-                    "momentum_rating": 0.7,
-                },
+                    "momentum_rating": 0.7
+                }
             },
             {
                 "home_team": "Los Angeles Dodgers",
@@ -47,15 +34,18 @@ def get_demo_dashboard():
                 "weather": {
                     "temp_f": 72,
                     "condition": "Partly Cloudy",
-                    "wind_mph": 3,
+                    "wind_mph": 3
                 },
                 "analytics": {
                     "run_expectancy": 8.4,
                     "park_factor": 1.08,
                     "weather_factor": 1.02,
-                    "momentum_rating": 0.6,
-                },
+                    "momentum_rating": 0.6
+                }
             }
         ],
+        "pitchers": [],
+        "hitters": [],
+        "status": "demo",
         "message": "Demo fallback data loaded successfully."
     }
