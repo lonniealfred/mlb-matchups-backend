@@ -6,6 +6,7 @@ from app.services.demo_fallback import get_demo_dashboard
 
 router = APIRouter()
 
+
 @router.get("/dashboard")
 async def get_dashboard():
     """
