@@ -1,23 +1,32 @@
-# app/routers/dashboard.py
+# app/main.py
 
-from fastapi import APIRouter
-from app.services.espn_scraper import build_dashboard
-from app.services.demo_fallback import get_demo_dashboard
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-router = APIRouter()
+# Import your dashboard router directly
+from app.routers.dashboard import router as dashboard_router
 
 
-@router.get("/dashboard")
-async def get_dashboard():
-    """
-    Main dashboard endpoint.
-    Attempts to fetch live ESPN data.
-    Falls back to demo data if scraping fails.
-    Always returns a complete, frontend-safe object.
-    """
-    try:
-        data = await build_dashboard()
-        return data
-    except Exception:
-        # Guaranteed fallback so the frontend never breaks
-        return get_demo_dashboard()
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="MLB Matchups API",
+        version="1.0.0",
+        description="Backend powering the MLB Matchups dashboard."
+    )
+
+    # CORS for your Next.js frontend
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # replace with your frontend domain later
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Register the dashboard router
+    app.include_router(dashboard_router)
+
+    return app
+
+
+app = create_app()
