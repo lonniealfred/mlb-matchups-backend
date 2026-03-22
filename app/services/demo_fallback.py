@@ -6,10 +6,7 @@ from typing import Dict, Any, List
 def get_demo_dashboard() -> Dict[str, Any]:
     """
     Provides a stable fallback dashboard response when ESPN scraping fails.
-    This ensures the frontend always receives the correct structure:
-    - matchups
-    - pitchers
-    - hitters
+    Ensures the frontend always receives the correct structure.
     """
 
     demo_matchups: List[Dict[str, Any]] = [
@@ -87,4 +84,8 @@ def get_demo_dashboard() -> Dict[str, Any]:
 
     return {
         "matchups": demo_matchups,
-        "pitchers": [],   # You can enrich this
+        "pitchers": [],
+        "hitters": [],
+        "status": "demo",
+        "message": "Demo fallback data loaded successfully."
+    }
