@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Import your dashboard router directly
+# Import the router normally
 from app.routers.dashboard import router as dashboard_router
 
 
