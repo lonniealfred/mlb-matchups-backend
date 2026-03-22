@@ -7,7 +7,6 @@ from app.services.analytics import (
     calculate_hitter_difficulty,
 )
 
-
 ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard"
 ESPN_BOXSCORE = "https://site.web.api.espn.com/apis/v2/sports/baseball/mlb/summary"
 
@@ -66,7 +65,6 @@ async def build_dashboard() -> Dict[str, Any]:
       - pitchers[]
       - hitters[]
     """
-
     scoreboard = await fetch_scoreboard()
     if not scoreboard or "events" not in scoreboard:
         print("Scoreboard unavailable — returning None")
@@ -74,49 +72,4 @@ async def build_dashboard() -> Dict[str, Any]:
 
     matchups: List[Dict[str, Any]] = []
     pitchers: List[Dict[str, Any]] = []
-    hitters: List[Dict[str, Any]] = []
-
-    for event in scoreboard["events"]:
-        try:
-            game_id = event.get("id")
-            competitions = event.get("competitions", [])
-            if not competitions:
-                continue
-
-            comp = competitions[0]
-            teams = comp.get("competitors", [])
-
-            home = next((t for t in teams if t.get("homeAway") == "home"), None)
-            away = next((t for t in teams if t.get("homeAway") == "away"), None)
-
-            if not home or not away:
-                continue
-
-            # Basic matchup info
-            home_team = home.get("team", {}).get("displayName", "Home")
-            away_team = away.get("team", {}).get("displayName", "Away")
-            home_logo = home.get("team", {}).get("logo")
-            away_logo = away.get("team", {}).get("logo")
-            venue = comp.get("venue", {}).get("fullName", "Unknown Venue")
-            start_time = event.get("date")
-
-            # Weather (fallback-safe)
-            weather = comp.get("weather", {})
-            temp_f = weather.get("temperature", 70)
-            condition = weather.get("displayValue", "Clear")
-            wind_mph = weather.get("windSpeed", 5)
-
-            # Stadium + analytics placeholders
-            park_factor = 1.05
-            weather_factor = 1.02
-            momentum_rating = 0.6
-            opp_lineup_ops = 0.720
-            opp_hot_streaks = 1
-
-            # Fetch boxscore for pitcher/hitter stats
-            box = await fetch_boxscore(game_id)
-            if not box:
-                continue
-
-            # Extract pitchers
-            home_pitcher_raw = box
+    hitters:
