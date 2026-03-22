@@ -1,5 +1,9 @@
 # app/services/team_data.py
 
+# -----------------------------
+# TEAM LOGOS
+# -----------------------------
+
 TEAM_LOGOS = {
     "ATL": "https://a.espncdn.com/i/teamlogos/mlb/500/atl.png",
     "ARI": "https://a.espncdn.com/i/teamlogos/mlb/500/ari.png",
@@ -33,6 +37,10 @@ TEAM_LOGOS = {
     "WSH": "https://a.espncdn.com/i/teamlogos/mlb/500/wsh.png",
 }
 
+# -----------------------------
+# TEAM COLORS
+# -----------------------------
+
 TEAM_COLORS = {
     "ATL": {"primary": "#CE1141", "secondary": "#13274F"},
     "ARI": {"primary": "#A71930", "secondary": "#000000"},
@@ -62,6 +70,3 @@ TEAM_COLORS = {
     "STL": {"primary": "#C41E3A", "secondary": "#0A2252"},
     "TB":  {"primary": "#092C5C", "secondary": "#8FBCE6"},
     "TEX": {"primary": "#003278", "secondary": "#C0111F"},
-    "TOR": {"primary": "#134A8E", "secondary": "#E8291C"},
-    "WSH": {"primary": "#AB0003", "secondary": "#14225A"},
-}
