@@ -19,7 +19,14 @@ def get_demo_dashboard():
                     "name": "Rafael Devers",
                     "avg": ".295",
                     "hr": 5
-                }
+                },
+
+                "home_pitcher": "Gerrit Cole",
+                "away_pitcher": "Chris Sale",
+                "game_time": "1:05 PM ET",
+
+                "home_colors": {"primary": "#132448"},
+                "away_colors": {"primary": "#BD3039"}
             },
             {
                 "game_id": "CHC-MIL",
@@ -37,34 +44,17 @@ def get_demo_dashboard():
                     "name": "Christian Yelich",
                     "avg": ".300",
                     "hr": 3
-                }
+                },
+
+                "home_pitcher": "Justin Steele",
+                "away_pitcher": "Corbin Burnes",
+                "game_time": "2:10 PM ET",
+
+                "home_colors": {"primary": "#0E3386"},
+                "away_colors": {"primary": "#12284B"}
             },
             {
                 "game_id": "LAD-SF",
                 "home_team": "Dodgers",
                 "away_team": "Giants",
-                "home_logo": "https://a.espncdn.com/i/teamlogos/mlb/500/lad.png",
-                "away_logo": "https://a.espncdn.com/i/teamlogos/mlb/500/sf.png",
-
-                "home_featured_hitter": {
-                    "name": "Mookie Betts",
-                    "avg": ".320",
-                    "hr": 3
-                },
-                "away_featured_hitter": {
-                    "name": "Mike Yastrzemski",
-                    "avg": ".270",
-                    "hr": 4
-                }
-            }
-        ],
-
-        "hitters": [],
-        "top_hitters": [],
-        "pitchers": [],
-        "stadium_factors": [],
-        "momentum": [],
-        "weather_factors": [],
-        "league_scoring_trends": [],
-        "team_streaks": []
-    }
+                "home_logo": "https://a.espncdn.com/i/teamlogos/mlb
