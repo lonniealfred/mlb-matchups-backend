@@ -4,6 +4,7 @@ def get_demo_dashboard():
     return {
         "matchups": [
             {
+                "game_id": "NYY-BOS",
                 "home_team": "Yankees",
                 "away_team": "Red Sox",
                 "home_score": 4.2,
@@ -19,6 +20,7 @@ def get_demo_dashboard():
                 ],
             },
             {
+                "game_id": "CHC-MIL",
                 "home_team": "Cubs",
                 "away_team": "Brewers",
                 "home_score": 4.0,
@@ -34,6 +36,7 @@ def get_demo_dashboard():
                 ],
             },
             {
+                "game_id": "LAD-SF",
                 "home_team": "Dodgers",
                 "away_team": "Giants",
                 "home_score": 5.1,
@@ -100,7 +103,7 @@ def get_demo_dashboard():
             {"name": "Rafael Devers", "team": "BOS", "score": 89}
         ],
 
-        # Other sections (fill in later if needed)
+        # Other sections (safe empty placeholders)
         "pitchers": [],
         "stadium_factors": [],
         "momentum": [],
