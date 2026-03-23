@@ -6,25 +6,19 @@ router = APIRouter()
 
 @router.get("/dashboard")
 async def get_dashboard():
-    """
-    Returns today's MLB dashboard data.
-    Attempts real scraping first.
-    Falls back to demo dataset if scraping fails or returns empty data.
-    """
-
     try:
         data = await build_dashboard()
 
-        # If scraper returns nothing or partial data, fallback to demo
+        # Bulletproof fallback logic
         if (
             not data
-            or not data.get("matchups")
-            or len(data.get("matchups", [])) == 0
+            or "matchups" not in data
+            or not isinstance(data["matchups"], list)
+            or len(data["matchups"]) == 0
         ):
-            print("⚠️ Scraper returned empty data — using demo fallback.")
+            print("⚠️ Using demo fallback — scraper returned no matchups.")
             return get_demo_dashboard()
 
-        # If scraper succeeded, return real data
         return data
 
     except Exception as e:
