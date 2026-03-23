@@ -1,3 +1,5 @@
+# app/api/dashboard.py
+
 from fastapi import APIRouter
 from app.services.espn_scraper import build_dashboard
 from app.services.demo_fallback import get_demo_dashboard
@@ -6,6 +8,12 @@ router = APIRouter()
 
 @router.get("/dashboard")
 async def get_dashboard():
+    """
+    Returns today's MLB dashboard data.
+    Attempts real scraping first.
+    Falls back to demo dataset if scraping fails or returns empty data.
+    """
+
     try:
         data = await build_dashboard()
 
