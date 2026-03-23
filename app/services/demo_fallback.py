@@ -7,8 +7,6 @@ def get_demo_dashboard():
                 "game_id": "NYY-BOS",
                 "home_team": "Yankees",
                 "away_team": "Red Sox",
-                "home_score": 4.2,
-                "away_score": 3.8,
                 "home_logo": "https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png",
                 "away_logo": "https://a.espncdn.com/i/teamlogos/mlb/500/bos.png",
 
@@ -27,8 +25,6 @@ def get_demo_dashboard():
                 "game_id": "CHC-MIL",
                 "home_team": "Cubs",
                 "away_team": "Brewers",
-                "home_score": 4.0,
-                "away_score": 4.4,
                 "home_logo": "https://a.espncdn.com/i/teamlogos/mlb/500/chc.png",
                 "away_logo": "https://a.espncdn.com/i/teamlogos/mlb/500/mil.png",
 
@@ -47,8 +43,6 @@ def get_demo_dashboard():
                 "game_id": "LAD-SF",
                 "home_team": "Dodgers",
                 "away_team": "Giants",
-                "home_score": 5.1,
-                "away_score": 3.9,
                 "home_logo": "https://a.espncdn.com/i/teamlogos/mlb/500/lad.png",
                 "away_logo": "https://a.espncdn.com/i/teamlogos/mlb/500/sf.png",
 
