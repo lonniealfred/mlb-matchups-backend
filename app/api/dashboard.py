@@ -3,8 +3,8 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from app.services.demo_fallback import get_demo_dashboard
 from app.services.dashboard_live import build_live_dashboard
+from app.services.demo_fallback import get_demo_dashboard
 
 router = APIRouter()
 
@@ -12,24 +12,26 @@ router = APIRouter()
 @router.get("/dashboard")
 def get_dashboard():
     """
-    Returns the MLB dashboard data.
-    - First tries live scraper (dashboard_live)
-    - Falls back to demo data if scraping fails or returns empty
+    Live-first MLB dashboard endpoint.
+    - Attempts to build live data from scrapers
+    - If scrapers fail OR return no matchups → fallback to demo data
+    - Ensures the frontend always receives a complete, valid payload
     """
 
     try:
         live = build_live_dashboard()
 
-        # If scraper returns valid matchups, use it
-        if live and isinstance(live, dict) and live.get("matchups"):
+        # If live data exists and has matchups, return it
+        if (
+            isinstance(live, dict)
+            and live.get("matchups")
+            and len(live["matchups"]) > 0
+        ):
             return JSONResponse(content=live)
 
-        # Otherwise fallback
-        return JSONResponse(content=get_demo_dashboard())
-
     except Exception as e:
-        # Log error in Render logs
+        # Log scraper errors to Render logs
         print("LIVE SCRAPER ERROR:", e)
 
-        # Always return fallback so frontend never breaks
-        return JSONResponse(content=get_demo_dashboard())
+    # Fallback: always return demo data so UI never breaks
+    return JSONResponse(content=get_demo_dashboard())
