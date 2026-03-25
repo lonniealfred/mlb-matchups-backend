@@ -67,7 +67,7 @@ def build_demo_dashboard():
 # ---------------------------------------------------------
 
 def build_live_game_object(event):
-    """Convert ESPN event JSON into dashboard game format."""
+    """Convert a single ESPN event into dashboard game format."""
     try:
         comp = event["competitions"][0]
         home = comp["competitors"][0]
@@ -78,8 +78,10 @@ def build_live_game_object(event):
             "away_team": away["team"]["displayName"],
             "home_logo": home["team"].get("logo"),
             "away_logo": away["team"].get("logo"),
+
             "home_pitcher": home.get("probables", [{}])[0].get("athlete", {}).get("displayName", "TBD"),
             "away_pitcher": away.get("probables", [{}])[0].get("athlete", {}).get("displayName", "TBD"),
+
             "game_time": comp.get("date", "TBD"),
 
             # Placeholder hitters until real stats are wired
@@ -95,4 +97,34 @@ def build_live_game_object(event):
 
 
 def build_live_dashboard_from_games(events):
-    """Convert ESPN events into full dashboard format
+    """Convert ESPN events into full dashboard format."""
+    games = []
+    for event in events:
+        g = build_live_game_object(event)
+        if g:
+            games.append(g)
+
+    return {
+        "mode": "live",
+        "games": games,
+        "hitters": DEMO_HITTERS,   # still demo until real stats added
+        "trends": DEMO_TRENDS,     # still demo until real trends added
+    }
+
+
+# ---------------------------------------------------------
+# MAIN ENTRYPOINT
+# ---------------------------------------------------------
+
+async def build_live_dashboard():
+    """Main function used by /dashboard endpoint."""
+    events = await fetch_scoreboard()
+
+    # No games → demo mode
+    if not events:
+        record_scrape_status("demo", 0)
+        return build_demo_dashboard()
+
+    # Live games found
+    record_scrape_status("live", len(events))
+    return build_live_dashboard_from_games(events)
