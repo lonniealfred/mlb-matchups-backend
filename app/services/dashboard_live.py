@@ -1,5 +1,6 @@
 import httpx
 from datetime import datetime
+
 from app.demo.demo_games import DEMO_GAMES
 from app.demo.demo_hitters import DEMO_HITTERS
 from app.demo.demo_trends import DEMO_TRENDS
@@ -15,6 +16,7 @@ _last_scrape_status = {
 }
 
 def record_scrape_status(mode: str, games_found: int):
+    """Store the most recent scrape status for /scraper/status."""
     global _last_scrape_status
     _last_scrape_status = {
         "mode": mode,
@@ -23,11 +25,12 @@ def record_scrape_status(mode: str, games_found: int):
     }
 
 def get_scraper_status():
+    """Return the last scrape status."""
     return _last_scrape_status
 
 
 # ---------------------------------------------------------
-# LIVE SCRAPING HELPERS
+# ESPN SCRAPING
 # ---------------------------------------------------------
 
 ESPN_SCOREBOARD_URL = (
@@ -45,6 +48,10 @@ async def fetch_scoreboard():
         return []
 
 
+# ---------------------------------------------------------
+# DEMO DASHBOARD
+# ---------------------------------------------------------
+
 def build_demo_dashboard():
     """Return demo dashboard when no live games exist."""
     return {
@@ -55,8 +62,12 @@ def build_demo_dashboard():
     }
 
 
+# ---------------------------------------------------------
+# LIVE GAME PARSING
+# ---------------------------------------------------------
+
 def build_live_game_object(event):
-    """Convert ESPN event into your dashboard game format."""
+    """Convert ESPN event JSON into dashboard game format."""
     try:
         comp = event["competitions"][0]
         home = comp["competitors"][0]
@@ -65,13 +76,17 @@ def build_live_game_object(event):
         return {
             "home_team": home["team"]["displayName"],
             "away_team": away["team"]["displayName"],
-            "home_logo": home["team"]["logo"],
-            "away_logo": away["team"]["logo"],
+            "home_logo": home["team"].get("logo"),
+            "away_logo": away["team"].get("logo"),
             "home_pitcher": home.get("probables", [{}])[0].get("athlete", {}).get("displayName", "TBD"),
             "away_pitcher": away.get("probables", [{}])[0].get("athlete", {}).get("displayName", "TBD"),
             "game_time": comp.get("date", "TBD"),
+
+            # Placeholder hitters until real stats are wired
             "home_featured_hitter": {"name": "TBD"},
             "away_featured_hitter": {"name": "TBD"},
+
+            # Placeholder colors
             "home_colors": {"primary": "#1e293b"},
             "away_colors": {"primary": "#1e293b"},
         }
@@ -80,34 +95,4 @@ def build_live_game_object(event):
 
 
 def build_live_dashboard_from_games(events):
-    """Convert ESPN events into dashboard format."""
-    games = []
-    for event in events:
-        g = build_live_game_object(event)
-        if g:
-            games.append(g)
-
-    return {
-        "mode": "live",
-        "games": games,
-        "hitters": DEMO_HITTERS,  # until real hitter stats are wired
-        "trends": DEMO_TRENDS,
-    }
-
-
-# ---------------------------------------------------------
-# MAIN ENTRYPOINT
-# ---------------------------------------------------------
-
-async def build_live_dashboard():
-    """Main function used by /dashboard endpoint."""
-    events = await fetch_scoreboard()
-
-    # No games → demo mode
-    if not events:
-        record_scrape_status("demo", 0)
-        return build_demo_dashboard()
-
-    # Live games found
-    record_scrape_status("live", len(events))
-    return build_live_dashboard_from_games(events)
+    """Convert ESPN events into full dashboard format
