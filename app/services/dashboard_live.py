@@ -49,6 +49,57 @@ async def fetch_scoreboard():
 
 
 # ---------------------------------------------------------
+# FLATTEN TRENDS (Option A)
+# ---------------------------------------------------------
+
+def flatten_trends(trends_obj):
+    """Convert nested trends object into a flat list of {label, value} items."""
+    flat = []
+
+    # Stadium HR factors
+    for item in trends_obj.get("stadium_factors", []):
+        flat.append({
+            "label": f"{item['stadium']} HR Factor",
+            "value": item["hr_factor"]
+        })
+
+    # Weather factors
+    for item in trends_obj.get("weather_factors", []):
+        flat.append({
+            "label": f"{item['stadium']} Weather",
+            "value": item["wind"]
+        })
+
+    # Momentum
+    for item in trends_obj.get("momentum", []):
+        flat.append({
+            "label": f"{item['team']} Momentum",
+            "value": item["trend"]
+        })
+
+    # League scoring trends
+    league = trends_obj.get("league_scoring_trends", {})
+    if league:
+        flat.append({
+            "label": "League Runs/Game",
+            "value": league.get("runs_per_game")
+        })
+        flat.append({
+            "label": "League HR/Game",
+            "value": league.get("hr_per_game")
+        })
+
+    # Team streaks
+    for item in trends_obj.get("team_streaks", []):
+        flat.append({
+            "label": f"{item['team']} Streak",
+            "value": item["streak"]
+        })
+
+    return flat
+
+
+# ---------------------------------------------------------
 # DEMO DASHBOARD
 # ---------------------------------------------------------
 
@@ -58,7 +109,7 @@ def build_demo_dashboard():
         "mode": "demo",
         "games": DEMO_GAMES,
         "hitters": DEMO_HITTERS,
-        "trends": DEMO_TRENDS,
+        "trends": flatten_trends(DEMO_TRENDS),
     }
 
 
@@ -107,8 +158,8 @@ def build_live_dashboard_from_games(events):
     return {
         "mode": "live",
         "games": games,
-        "hitters": DEMO_HITTERS,   # still demo until real stats added
-        "trends": DEMO_TRENDS,     # still demo until real trends added
+        "hitters": DEMO_HITTERS,          # still demo until real stats added
+        "trends": flatten_trends(DEMO_TRENDS),  # flattened for frontend compatibility
     }
 
 
