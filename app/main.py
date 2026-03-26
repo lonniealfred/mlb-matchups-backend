@@ -7,7 +7,7 @@ from app.services.dashboard_live import build_live_dashboard, get_scraper_status
 # Correct imports based on your actual function names
 from app.scrapers.mlb_scoreboard import fetch_scoreboard
 from app.services.hitters_leaderboard import build_hitters_leaderboard
-from app.scrapers.mlb_trends import get_trends
+from app.scrapers.mlb_trends import fetch_trends
 
 
 app = FastAPI(title="MLB Matchups Backend")
@@ -37,7 +37,7 @@ async def dashboard():
     hitter_rankings = await build_hitters_leaderboard()
 
     # 3. Stadium HR trends
-    stadium_factors = await get_trends()
+    stadium_factors = await fetch_trends()
 
     # 4. Build enriched dashboard payload
     return build_live_dashboard(games, hitter_rankings, stadium_factors)
