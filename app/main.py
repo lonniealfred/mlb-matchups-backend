@@ -1,21 +1,24 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Import dashboard builder + scraper modules
+# Dashboard builder + legacy status
 from app.services.dashboard_live import build_live_dashboard, get_scraper_status
-from app.services.schedule_scraper import get_games
-from app.services.hitter_service import get_hitter_rankings
-from app.services.stadium_factors import get_stadium_factors
+
+# Scrapers / services that produce the required data
+from app.scrapers.mlb_scoreboard import get_scoreboard
+from app.services.hitters_leaderboard import build_hitter_leaderboard
+from app.scrapers.mlb_trends import get_trends
 
 
 app = FastAPI(title="MLB Matchups Backend")
 
+
 # ---------------------------------------------------------
-# CORS (required for Next.js frontend)
+# CORS (required for your Next.js frontend)
 # ---------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # You can restrict this later
+    allow_origins=["*"],   # tighten later if needed
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,12 +30,16 @@ app.add_middleware(
 # ---------------------------------------------------------
 @app.get("/dashboard")
 async def dashboard():
-    # Fetch all required data
-    games = await get_games()
-    hitter_rankings = await get_hitter_rankings()
-    stadium_factors = await get_stadium_factors()
+    # 1. Fetch live games
+    games = await get_scoreboard()
 
-    # Build enriched dashboard payload
+    # 2. Build hitter rankings
+    hitter_rankings = await build_hitter_leaderboard()
+
+    # 3. Stadium HR factor trends
+    stadium_factors = await get_trends()
+
+    # 4. Build enriched dashboard payload
     return build_live_dashboard(games, hitter_rankings, stadium_factors)
 
 
