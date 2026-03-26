@@ -4,9 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 # Dashboard builder + legacy status
 from app.services.dashboard_live import build_live_dashboard, get_scraper_status
 
-# Correct imports based on your actual folder structure
+# Correct imports based on your actual function names
 from app.scrapers.mlb_scoreboard import fetch_scoreboard
-from app.services.hitters_leaderboard import build_hitter_leaderboard
+from app.services.hitters_leaderboard import build_hitters_leaderboard
 from app.scrapers.mlb_trends import get_trends
 
 
@@ -34,7 +34,7 @@ async def dashboard():
     games = await fetch_scoreboard()
 
     # 2. Hitter rankings
-    hitter_rankings = await build_hitter_leaderboard()
+    hitter_rankings = await build_hitters_leaderboard()
 
     # 3. Stadium HR trends
     stadium_factors = await get_trends()
