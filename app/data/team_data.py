@@ -1,4 +1,4 @@
-# app/services/team_data.py
+# app/data/team_data.py
 
 # ============================================================
 # TEAM NAME → ABBREVIATION (ESPN FULL NAMES)
