@@ -46,11 +46,11 @@ def build_live_dashboard(games, hitter_rankings, stadium_factors):
 
             "game_time": g.get("game_time"),
 
-            # NEW: Featured hitters
+            # Featured hitters
             "home_featured_hitter": home_featured,
             "away_featured_hitter": away_featured,
 
-            # NEW: Team colors
+            # Team colors
             "home_colors": home_colors,
             "away_colors": away_colors,
         })
@@ -62,3 +62,17 @@ def build_live_dashboard(games, hitter_rankings, stadium_factors):
         "hitters": hitter_rankings,
         "trends": stadium_factors,
     }
+
+
+# ---------------------------------------------------------
+# Legacy compatibility for /mode endpoint
+# Render was crashing because mode.py imports this.
+# ---------------------------------------------------------
+
+def get_scraper_status():
+    """
+    Legacy compatibility function.
+    Your /mode endpoint imports this.
+    Returning a simple OK status prevents crashes.
+    """
+    return {"status": "ok"}
