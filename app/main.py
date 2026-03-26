@@ -16,12 +16,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ⭐ THIS IS WHERE YOUR CODE GOES
+# ⭐ PLACE THE CODE RIGHT HERE
 @app.get("/dashboard")
 async def dashboard():
-    games = fetch_scoreboard()                 # sync
-    hitter_rankings = build_hitters_leaderboard()  # sync
-    stadium_factors = fetch_trends()           # sync
+    games = fetch_scoreboard()                      # sync
+    hitter_rankings = build_hitters_leaderboard(games)  # sync, requires games
+    stadium_factors = fetch_trends()                # sync
 
     return build_live_dashboard(games, hitter_rankings, stadium_factors)
 # ⭐ END OF INSERT
