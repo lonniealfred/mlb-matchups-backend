@@ -1,8 +1,45 @@
 # app/services/team_data.py
 
-# -----------------------------
-# TEAM LOGOS
-# -----------------------------
+# ============================================================
+# TEAM NAME → ABBREVIATION (ESPN FULL NAMES)
+# ============================================================
+
+TEAM_NAME_TO_ABBR = {
+    "Arizona Diamondbacks": "ARI",
+    "Atlanta Braves": "ATL",
+    "Baltimore Orioles": "BAL",
+    "Boston Red Sox": "BOS",
+    "Chicago Cubs": "CHC",
+    "Chicago White Sox": "CHW",
+    "Cincinnati Reds": "CIN",
+    "Cleveland Guardians": "CLE",
+    "Colorado Rockies": "COL",
+    "Detroit Tigers": "DET",
+    "Houston Astros": "HOU",
+    "Kansas City Royals": "KC",
+    "Los Angeles Angels": "LAA",
+    "Los Angeles Dodgers": "LAD",
+    "Miami Marlins": "MIA",
+    "Milwaukee Brewers": "MIL",
+    "Minnesota Twins": "MIN",
+    "New York Mets": "NYM",
+    "New York Yankees": "NYY",
+    "Oakland Athletics": "OAK",
+    "Philadelphia Phillies": "PHI",
+    "Pittsburgh Pirates": "PIT",
+    "San Diego Padres": "SD",
+    "Seattle Mariners": "SEA",
+    "San Francisco Giants": "SF",
+    "St. Louis Cardinals": "STL",
+    "Tampa Bay Rays": "TB",
+    "Texas Rangers": "TEX",
+    "Toronto Blue Jays": "TOR",
+    "Washington Nationals": "WSH",
+}
+
+# ============================================================
+# TEAM LOGOS (BY ABBREVIATION)
+# ============================================================
 
 TEAM_LOGOS = {
     "ATL": "https://a.espncdn.com/i/teamlogos/mlb/500/atl.png",
@@ -26,7 +63,7 @@ TEAM_LOGOS = {
     "NYY": "https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png",
     "OAK": "https://a.espncdn.com/i/teamlogos/mlb/500/oak.png",
     "PHI": "https://a.espncdn.com/i/teamlogos/mlb/500/phi.png",
-    "PIT": "https://a.espncdn.com/i/teamlogos/mlb/500/pit.png",  # ← FIXED
+    "PIT": "https://a.espncdn.com/i/teamlogos/mlb/500/pit.png",
     "SD":  "https://a.espncdn.com/i/teamlogos/mlb/500/sd.png",
     "SEA": "https://a.espncdn.com/i/teamlogos/mlb/500/sea.png",
     "SF":  "https://a.espncdn.com/i/teamlogos/mlb/500/sf.png",
@@ -37,9 +74,9 @@ TEAM_LOGOS = {
     "WSH": "https://a.espncdn.com/i/teamlogos/mlb/500/wsh.png",
 }
 
-# -----------------------------
-# TEAM COLORS
-# -----------------------------
+# ============================================================
+# TEAM COLORS (BY ABBREVIATION)
+# ============================================================
 
 TEAM_COLORS = {
     "ATL": {"primary": "#CE1141", "secondary": "#13274F"},
@@ -74,9 +111,21 @@ TEAM_COLORS = {
     "WSH": {"primary": "#AB0003", "secondary": "#14225A"},
 }
 
-# -----------------------------
-# STADIUM / PARK FACTORS
-# -----------------------------
+# ============================================================
+# GETTERS (SAFE)
+# ============================================================
+
+def get_team_logo(team_name: str) -> str:
+    abbr = TEAM_NAME_TO_ABBR.get(team_name)
+    return TEAM_LOGOS.get(abbr, "")
+
+def get_team_colors(team_name: str) -> dict:
+    abbr = TEAM_NAME_TO_ABBR.get(team_name)
+    return TEAM_COLORS.get(abbr, {"primary": "#1e293b"})
+
+# ============================================================
+# STATIC STADIUM FACTORS
+# ============================================================
 
 STADIUM_FACTORS = [
     {"team": "COL", "park_factor": 1.28, "hr_factor": 1.32, "name": "Coors Field"},
@@ -92,9 +141,9 @@ STADIUM_FACTORS = [
 def get_stadium_factors():
     return STADIUM_FACTORS
 
-# -----------------------------
+# ============================================================
 # WEATHER FACTORS
-# -----------------------------
+# ============================================================
 
 WEATHER_FACTORS = [
     {"condition": "Clear", "run_factor": 1.05, "hr_factor": 1.08},
@@ -108,9 +157,9 @@ WEATHER_FACTORS = [
 def get_weather_factors():
     return WEATHER_FACTORS
 
-# -----------------------------
+# ============================================================
 # TEAM MOMENTUM
-# -----------------------------
+# ============================================================
 
 TEAM_MOMENTUM = [
     {"team": "ATL", "last10": "7-3", "momentum": 0.72},
@@ -123,9 +172,9 @@ TEAM_MOMENTUM = [
 def get_team_momentum():
     return TEAM_MOMENTUM
 
-# -----------------------------
+# ============================================================
 # LEAGUE SCORING TRENDS
-# -----------------------------
+# ============================================================
 
 LEAGUE_SCORING_TRENDS = {
     "avg_runs_per_game": 9.1,
@@ -139,16 +188,11 @@ LEAGUE_SCORING_TRENDS = {
 def get_league_scoring_trends():
     return LEAGUE_SCORING_TRENDS
 
-# -----------------------------
+# ============================================================
 # TEAM HOT / COLD STREAKS
-# -----------------------------
+# ============================================================
 
 TEAM_STREAKS = [
     {"team": "PHI", "streak": "+5", "type": "hot"},
     {"team": "SEA", "streak": "+4", "type": "hot"},
-    {"team": "MIA", "streak": "-6", "type": "cold"},
-    {"team": "KC",  "streak": "-4", "type": "cold"},
-]
-
-def get_team_streaks():
-    return TEAM_STREAKS
+    {"team": "MIA", "streak": "-6
