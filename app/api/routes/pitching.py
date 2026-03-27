@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.services.pitching import fetch_pitchers_from_espn
+from app.scrapers.mlb_pitchers import fetch_pitchers_from_espn
 from app.services.pitching_leaderboard import build_pitching_leaderboard
 
 router = APIRouter()
@@ -7,10 +7,10 @@ router = APIRouter()
 @router.get("/pitching")
 def get_pitching():
     try:
-        # Fetch raw pitcher data (ESPN or fallback)
+        # Fetch raw pitcher data from ESPN scraper
         pitchers = fetch_pitchers_from_espn()
 
-        # Build leaderboard with scoring + sorting
+        # Build leaderboard (sorting, scoring, formatting)
         leaderboard = build_pitching_leaderboard(pitchers)
 
         return {
