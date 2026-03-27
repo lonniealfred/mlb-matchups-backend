@@ -1,14 +1,7 @@
-# app/scrapers/mlb_scoreboard.py
-
-import requests
-from datetime import date
-
-API_URL = "https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/events"
-
 def fetch_scoreboard():
     """
     Uses ESPN's new MLB events API.
-    Returns a list of matchup dicts.
+    Returns a dict with an 'events' key to keep downstream code stable.
     """
 
     try:
@@ -16,14 +9,13 @@ def fetch_scoreboard():
         resp.raise_for_status()
         data = resp.json()
     except Exception:
-        return []
+        return {"events": []}
 
     events = data.get("items", [])
     games = []
 
     for event in events:
         try:
-            # Fetch full event details
             event_resp = requests.get(event["$ref"], timeout=10)
             event_data = event_resp.json()
 
@@ -37,7 +29,6 @@ def fetch_scoreboard():
             home = next(c for c in competitors if c["homeAway"] == "home")
             away = next(c for c in competitors if c["homeAway"] == "away")
 
-            # Fetch full team objects
             home_team = requests.get(home["team"]["$ref"]).json()
             away_team = requests.get(away["team"]["$ref"]).json()
 
@@ -63,4 +54,4 @@ def fetch_scoreboard():
         except Exception:
             continue
 
-    return games
+    return {"events": games}
