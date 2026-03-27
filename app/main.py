@@ -6,6 +6,9 @@ from app.scrapers.mlb_scoreboard import fetch_scoreboard
 from app.services.hitters_leaderboard import build_hitters_leaderboard
 from app.scrapers.mlb_trends import fetch_trends
 
+# ⭐ ADD THIS
+from app.api.routes import matchups, pitching
+
 app = FastAPI(title="MLB Matchups Backend")
 
 app.add_middleware(
@@ -16,15 +19,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ⭐ PLACE THE CODE RIGHT HERE
+# ⭐ REGISTER YOUR ROUTES
+app.include_router(matchups.router)
+app.include_router(pitching.router)
+
 @app.get("/dashboard")
 async def dashboard():
-    games = fetch_scoreboard()                      # sync
-    hitter_rankings = build_hitters_leaderboard(games)  # sync, requires games
-    stadium_factors = fetch_trends()                # sync
-
+    games = fetch_scoreboard()
+    hitter_rankings = build_hitters_leaderboard(games)
+    stadium_factors = fetch_trends()
     return build_live_dashboard(games, hitter_rankings, stadium_factors)
-# ⭐ END OF INSERT
 
 @app.get("/mode")
 async def mode():

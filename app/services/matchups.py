@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Any
 
+
 def safe_get(obj: Dict, path: List[str], default=None):
     """Safely walk nested dicts."""
     for key in path:
@@ -53,14 +54,16 @@ def extract_matchups(scoreboard: Dict) -> List[Dict]:
         if len(competitors) != 2:
             continue
 
+        # Identify home/away
         home = competitors[0] if competitors[0].get("homeAway") == "home" else competitors[1]
         away = competitors[1] if home is competitors[0] else competitors[0]
 
+        # Pitchers
         home_pitcher = extract_pitcher(home)
         away_pitcher = extract_pitcher(away)
 
-        # Extract top hitters (if ESPN provides them)
-        raw_hitters = comp.get("notes", [])  # ESPN sometimes puts hitters here
+        # Top hitters (if ESPN provides them)
+        raw_hitters = comp.get("notes", [])
         top_hitters = []
 
         for h in raw_hitters:
