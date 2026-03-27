@@ -8,12 +8,13 @@ def extract_matchups(scoreboard: Dict[str, Any]) -> List[Dict[str, Any]]:
         { "events": [ { ...game... }, ... ] }
 
     Each game object is already fully processed:
-        - home_team, away_team
+        - game_id
+        - game_time
+        - home_team / away_team
         - logos
         - colors
         - pitchers (TBD for now)
         - featured hitters (TBD for now)
-        - game_time, game_id
 
     So this function simply validates and returns the list.
     """
