@@ -16,10 +16,10 @@ def get_dashboard():
         scoreboard = fetch_scoreboard()
         games = extract_matchups(scoreboard)
 
-        # 2. Fetch hitter rankings
+        # 2. Hitter rankings (NO arguments)
         hitter_rankings = build_hitter_leaderboard()
 
-        # 3. Fetch stadium HR factor trends
+        # 3. Stadium HR trends
         stadium_factors = fetch_stadium_trends()
 
         # 4. Build full dashboard payload
